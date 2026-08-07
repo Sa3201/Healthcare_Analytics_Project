@@ -1,5 +1,48 @@
-# you shouldn't commit these into source control
-# these are the default directory names, adjust/add to fit your needs
+# Python cache and test files
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual environments
+venv/
+.venv/
+
+# Environment variables and credentials
+.env
+.env.*
+!.env.example
+.streamlit/secrets.toml
+service_account.json
+google-service-account.json
+*.pem
+*.key
+
+# Raw/source data: document download steps, but do not upload large data files
+data/raw/*
+!data/raw/README.md
+data/supporting/*
+!data/supporting/README.md
+
+# Generated pipeline outputs
+data/processed/
+data/output/
+*.parquet
+
+# DBT build artifacts
 target/
 dbt_packages/
 logs/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS and editor files
+.DS_Store
+.vscode/
+
+# Local notes
+notes.txt

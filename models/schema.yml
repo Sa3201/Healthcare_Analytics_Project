@@ -1,0 +1,47 @@
+version: 2
+
+models:
+  - name: stg_facility_daily_staffing
+    description: Clean daily staffing records from the Gold Snowflake table.
+    columns:
+      - name: facility_ccn
+        data_tests:
+          - not_null
+      - name: work_date
+        data_tests:
+          - not_null
+
+  - name: stg_facility_quarterly_summary
+    description: Clean quarterly facility staffing summary.
+    columns:
+      - name: facility_ccn
+        data_tests:
+          - not_null
+
+  - name: stg_staffing_quality_analysis
+    description: Clean staffing and CMS quality-measure comparison data.
+    columns:
+      - name: facility_ccn
+        data_tests:
+          - not_null
+
+  - name: mart_state_staffing_summary
+    description: State-level staffing, occupancy, and contractor-hour summary.
+    columns:
+      - name: state
+        data_tests:
+          - not_null
+
+  - name: mart_low_staffing_facilities
+    description: Ten facilities with the lowest staffing HPRD each quarter.
+    columns:
+      - name: facility_ccn
+        data_tests:
+          - not_null
+
+  - name: mart_staffing_quality
+    description: Facility staffing compared with rehospitalization and readmission measures.
+    columns:
+      - name: facility_ccn
+        data_tests:
+          - not_null

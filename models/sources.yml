@@ -1,0 +1,29 @@
+version: 2
+
+sources:
+  - name: healthcare_raw
+    description: Gold datasets loaded from AWS Glue and S3 into Snowflake.
+    database: PP2_HEALTHCARE
+    schema: RAW
+
+    tables:
+      - name: FACILITY_DAILY_STAFFING
+        description: One nursing-home facility per day.
+        columns:
+          - name: FACILITY_CCN
+            data_tests:
+              - not_null
+
+      - name: FACILITY_QUARTERLY_SUMMARY
+        description: One nursing-home facility per quarter.
+        columns:
+          - name: FACILITY_CCN
+            data_tests:
+              - not_null
+
+      - name: STAFFING_QUALITY_ANALYSIS
+        description: Staffing and quality-measure comparison data.
+        columns:
+          - name: FACILITY_CCN
+            data_tests:
+              - not_null

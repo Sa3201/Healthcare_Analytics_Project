@@ -1,0 +1,18 @@
+# CloudFormation Git sync deployment configuration.
+# Replace the Google Drive folder ID before committing this file.
+template-file-path: infrastructure/glue_workflow.yml
+
+parameters:
+  GoogleDriveJobName: PP2-Healthcare-Analytics-Raw-Load
+  PbjSilverJobName: PP2-Healthcare-PBJ-Bronze-to-Silver
+  CmsSilverJobName: PP2-CSM-Supporting-Bronze-to-Silver
+  GoldMetricsJobName: PP2-Healthcare-Silver-to-Gold
+  DataLakeBucketName: pp2-healthcare-analytics
+  BronzePrefix: bronze
+  GoogleDriveFolderId: 11vza9EFGqQHyV8l30-gGrtu0a1httsZW
+  GoogleSecretName: healthcare/google-drive-service-account
+  AwsRegion: us-east-1
+
+tags:
+  Project: Healthcare-Analytics
+  ManagedBy: CloudFormation-GitSync

@@ -1,0 +1,116 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: >
+  Glue workflow for the Healthcare Analytics project. It runs the Google Drive
+  ingestion job, runs the two Bronze-to-Silver jobs in parallel, and then runs
+  the Silver-to-Gold job after both succeed.
+
+Parameters:
+  GoogleDriveJobName:
+    Type: String
+    Default: PP2-Healthcare-Analytics-Raw-Load
+  PbjSilverJobName:
+    Type: String
+    Default: PP2-Healthcare-PBJ-Bronze-to-Silver
+  CmsSilverJobName:
+    Type: String
+    Default: PP2-CSM-Supporting-Bronze-to-Silver
+  GoldMetricsJobName:
+    Type: String
+    Default: PP2-Healthcare-Silver-to-Gold
+  DataLakeBucketName:
+    Type: String
+    Default: pp2-healthcare-analytics
+  BronzePrefix:
+    Type: String
+    Default: bronze
+    Description: S3 prefix where the Google Drive job writes raw source files
+  GoogleDriveFolderId:
+    Type: String
+    Description: Google Drive folder ID that contains the PBJ and CMS source files
+  GoogleSecretName:
+    Type: String
+    Default: healthcare/google-drive-service-account
+    Description: AWS Secrets Manager secret name containing the Google service-account JSON
+  AwsRegion:
+    Type: String
+    Default: us-east-1
+
+Resources:
+  HealthcarePipelineWorkflow:
+    Type: AWS::Glue::Workflow
+    Properties:
+      Name: healthcare-analytics-pipeline
+      Description: Google Drive to S3 Bronze, Silver, and Gold workflow
+      MaxConcurrentRuns: 1
+      DefaultRunProperties:
+        project: healthcare-analytics
+
+  StartGoogleDriveIngestion:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: healthcare-start-google-drive-ingestion
+      Description: Starts the Google Drive ingestion job when the workflow is run manually
+      Type: ON_DEMAND
+      WorkflowName: !Ref HealthcarePipelineWorkflow
+      Actions:
+        - JobName: !Ref GoogleDriveJobName
+          Arguments:
+            "--google-drive-folder-id": !Ref GoogleDriveFolderId
+            "--google-secret-name": !Ref GoogleSecretName
+            "--s3-bucket": !Ref DataLakeBucketName
+            "--s3-prefix": !Sub "${BronzePrefix}/"
+            "--aws-region": !Ref AwsRegion
+
+  RunSilverJobsAfterIngestion:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: healthcare-run-silver-jobs
+      Description: Runs PBJ and CMS Silver jobs after ingestion succeeds
+      Type: CONDITIONAL
+      StartOnCreation: true
+      WorkflowName: !Ref HealthcarePipelineWorkflow
+      Predicate:
+        Conditions:
+          - LogicalOperator: EQUALS
+            JobName: !Ref GoogleDriveJobName
+            State: SUCCEEDED
+      Actions:
+        - JobName: !Ref PbjSilverJobName
+          Arguments:
+            "--bronze-path": !Sub "s3://${DataLakeBucketName}/${BronzePrefix}/PBJ_Daily_Nurse_Staffing_Q2_2024.csv"
+            "--silver-path": !Sub "s3://${DataLakeBucketName}/silver/silver_daily_staffing/"
+        - JobName: !Ref CmsSilverJobName
+          Arguments:
+            "--bronze-folder": !Sub "s3://${DataLakeBucketName}/${BronzePrefix}/"
+            "--silver-folder": !Sub "s3://${DataLakeBucketName}/silver/"
+
+  RunGoldMetricsAfterSilver:
+    Type: AWS::Glue::Trigger
+    Properties:
+      Name: healthcare-run-gold-metrics
+      Description: Runs Gold metrics only after both Silver jobs succeed
+      Type: CONDITIONAL
+      StartOnCreation: true
+      WorkflowName: !Ref HealthcarePipelineWorkflow
+      Predicate:
+        Logical: AND
+        Conditions:
+          - LogicalOperator: EQUALS
+            JobName: !Ref PbjSilverJobName
+            State: SUCCEEDED
+          - LogicalOperator: EQUALS
+            JobName: !Ref CmsSilverJobName
+            State: SUCCEEDED
+      Actions:
+        - JobName: !Ref GoldMetricsJobName
+          Arguments:
+            "--silver-folder": !Sub "s3://${DataLakeBucketName}/silver/"
+            "--gold-folder": !Sub "s3://${DataLakeBucketName}/gold/"
+
+Outputs:
+  WorkflowName:
+    Description: Name of the Glue workflow to run and monitor
+    Value: !Ref HealthcarePipelineWorkflow
+  StartTriggerName:
+    Description: On-demand trigger that starts the ingestion job
+    Value: !Ref StartGoogleDriveIngestion

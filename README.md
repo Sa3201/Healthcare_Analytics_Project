@@ -34,6 +34,17 @@ The project uses the CMS Payroll-Based Journal (PBJ) Daily Nurse Staffing file f
 5. **Model** — dbt creates tested staging models and analytics marts in `PP2_HEALTHCARE.ANALYTICS`.
 6. **Visualize** — Streamlit queries only the analytics marts.
 
+## Glue orchestration
+
+The Glue job scripts are orchestrated by the version-controlled CloudFormation
+template at `infrastructure/glue_workflow.yml`. A manually started Glue workflow
+runs `PP2-Healthcare-Analytics-Raw-Load`, then the PBJ and CMS Silver jobs in
+parallel, followed by `PP2-Healthcare-Silver-to-Gold` after both Silver jobs
+succeed.
+
+Snowflake loading and `dbt build` are currently run separately after the Glue
+workflow completes.
+
 ## Analytics models
 
 | dbt mart | Purpose |
